@@ -27,7 +27,8 @@ RUN /opt/conda/bin/conda create -n gbdt -y
 RUN /opt/conda/bin/conda install -n gbdt -y -c anaconda ipykernel
 RUN /opt/conda/envs/gbdt/bin/python -m ipykernel install --user --name=gbdt
 RUN /opt/conda/envs/gbdt/bin/python -m pip install xgboost==1.5.0
-RUN /opt/conda/envs/gbdt/bin/python -m pip install catboost==1.0.3
+# originaly catboost==1.0.3
+RUN /opt/conda/envs/gbdt/bin/python -m pip install catboost==1.2.5
 RUN /opt/conda/envs/gbdt/bin/python -m pip install lightgbm==3.3.1
 RUN /opt/conda/bin/conda install -n gbdt -y -c conda-forge optuna
 RUN /opt/conda/bin/conda install -n gbdt -y -c conda-forge configargparse
@@ -39,7 +40,7 @@ RUN /opt/conda/envs/gbdt/bin/python -m pip install https://github.com/schufa-inn
 #############################################################################################################
 
 # Set up Pytorch environment
-RUN /opt/conda/bin/conda create -n torch -y pytorch cudatoolkit=11.3 -c pytorch
+RUN /opt/conda/bin/conda create -n torch -y python=3.8 pytorch cudatoolkit=11.3 -c pytorch
 RUN /opt/conda/bin/conda install -n torch -y -c anaconda ipykernel
 RUN /opt/conda/bin/conda install -n torch -y -c conda-forge optuna
 RUN /opt/conda/bin/conda install -n torch -y -c conda-forge configargparse
@@ -79,7 +80,7 @@ RUN /opt/conda/bin/conda install -n tensorflow -y pandas
 RUN /opt/conda/envs/torch/bin/python -m pip install stg==0.1.2
 
 # For NAM
-RUN /opt/conda/envs/torch/bin/python -m pip install https://github.com/AmrMKayid/nam/archive/main.zip
+RUN /opt/conda/envs/torch/bin/python -m pip install https://github.com/eunsikchoi1230/nam/archive/main.zip
 RUN /opt/conda/envs/torch/bin/python -m pip install tabulate
 
 # For DANet
