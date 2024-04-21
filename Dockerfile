@@ -1,6 +1,30 @@
 # Use anaconda as baseline
 FROM continuumio/miniconda3
 
+# Install CUDA
+# Choose an appropriate CUDA version compatible with your needs
+ARG CUDA_VERSION=11.8
+# Add the NVIDIA repository and keys
+RUN apt-get update && apt-get install -y gnupg2 curl && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
+    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /" > /etc/apt/sources.list.d/cuda.list && \
+    apt-get update && \
+    apt-get install -y cuda-toolkit-$CUDA_VERSION
+
+# Set PATH for CUDA 11.0 binaries and libraries
+ENV PATH /usr/local/cuda-11.0/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda-11.0/lib64:${LD_LIBRARY_PATH}
+
+# Add cuDNN installation
+ARG CUDNN_VERSION=8.7.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcudnn8=$CUDNN_VERSION-1+cuda11.0 \
+    libcudnn8-dev=$CUDNN_VERSION-1+cuda11.0 \
+&& apt-mark hold libcudnn8 && rm -rf /var/lib/apt/lists/*
+
+
+
 # Install Jupyter notebook
 RUN /opt/conda/bin/conda install jupyter -y
 RUN mkdir /opt/notebooks
@@ -19,6 +43,9 @@ RUN /opt/conda/envs/sklearn/bin/python -m ipykernel install --user --name=sklear
 RUN /opt/conda/bin/conda install -n sklearn -y -c conda-forge optuna
 RUN /opt/conda/bin/conda install -n sklearn -y -c conda-forge configargparse
 RUN /opt/conda/bin/conda install -n sklearn -y pandas
+
+# For stratified kfold
+RUN /opt/conda/envs/sklearn/bin/python -m pip install iterative-stratification
 
 #############################################################################################################
 
@@ -50,6 +77,9 @@ RUN /opt/conda/bin/conda install -n torch -y matplotlib
 RUN /opt/conda/bin/conda install -n torch -y -c pytorch captum
 RUN /opt/conda/bin/conda install -n torch -y shap
 RUN /opt/conda/envs/gbdt/bin/python -m ipykernel install --user --name=torch
+
+# For stratified kfold
+RUN /opt/conda/envs/torch/bin/python -m pip install iterative-stratification
 
 # For TabNet
 RUN /opt/conda/envs/torch/bin/python -m pip install pytorch-tabnet
@@ -89,6 +119,6 @@ RUN /opt/conda/envs/torch/bin/python -m pip install yacs
 #############################################################################################################
 
 # Download code into container
-RUN git clone https://github.com/kathrinse/TabSurvey.git /opt/notebooks
+RUN git clone https://github.com/eunsikchoi1230/TabSurvey.git /opt/notebooks
 # Start jupyter notebook
 CMD opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='*' --port=3123 --no-browser --allow-root
