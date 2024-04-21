@@ -1,4 +1,6 @@
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, f1_score, log_loss, roc_auc_score
+from sklearn.metrics import hamming_loss, coverage_error, label_ranking_loss, label_ranking_average_precision_score
+
 import numpy as np
 
 
@@ -9,6 +11,8 @@ def get_scorer(args):
         return ClassScorer()
     elif args.objective == "binary":
         return BinScorer()
+    elif args.objective == "multi-label_classification":
+        return MultilabelScorer()
     else:
         raise NotImplementedError("No scorer for \"" + args.objective + "\" implemented")
 
@@ -157,3 +161,58 @@ class BinScorer(Scorer):
 
     def get_objective_result(self):
         return np.mean(self.aucs)
+
+
+class MultilabelScorer(Scorer):
+    
+        def __init__(self):
+            self.accs = []
+            self.hamming_losses = []
+            self.coverage_errors = []
+            self.ranking_losses = []
+            self.average_precisions = []
+    
+        def eval(self, y_true, y_prediction, y_probabilities):
+            acc = accuracy_score(y_true, y_prediction)
+            hamming = hamming_loss(y_true, y_prediction)
+            cov = coverage_error(y_true, y_probabilities)
+            ranking = label_ranking_loss(y_true, y_probabilities)
+            avg_p = label_ranking_average_precision_score(y_true, y_probabilities)
+    
+            self.accs.append(acc)
+            self.hamming_losses.append(hamming)
+            self.coverage_errors.append(cov)
+            self.ranking_losses.append(ranking)
+            self.average_precisions.append(avg_p)
+    
+            return {"Accuracy": acc, "Hamming Loss": hamming, "Coverage Error": cov, "Ranking Loss": ranking, "Average Precision": avg_p}
+    
+        def get_results(self):
+            acc_mean = np.mean(self.accs)
+            acc_std = np.std(self.accs)
+
+            hamming_mean = np.mean(self.hamming_losses)
+            hamming_std = np.std(self.hamming_losses)
+
+            cov_mean = np.mean(self.coverage_errors)
+            cov_std = np.std(self.coverage_errors)
+
+            ranking_mean = np.mean(self.ranking_losses)
+            ranking_std = np.std(self.ranking_losses)
+
+            avg_p_mean = np.mean(self.average_precisions)
+            avg_p_std = np.std(self.average_precisions)
+
+            return {"Accuracy - mean": acc_mean,
+                    "Accuracy - std": acc_std,
+                    "Hamming Loss - mean": hamming_mean,
+                    "Hamming Loss - std": hamming_std,
+                    "Coverage Error - mean": cov_mean,
+                    "Coverage Error - std": cov_std,
+                    "Ranking Loss - mean": ranking_mean,
+                    "Ranking Loss - std": ranking_std,
+                    "Average Precision - mean": avg_p_mean,
+                    "Average Precision - std": avg_p_std}
+
+        def get_objective_result(self):
+            return np.mean(self.hamming_losses)

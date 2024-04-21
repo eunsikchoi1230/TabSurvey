@@ -1,0 +1,3 @@
+Docker volume mounting command:
+
+docker run -it -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks tabsurvey /bin/bash

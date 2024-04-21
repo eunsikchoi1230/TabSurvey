@@ -10,51 +10,53 @@ from utils.timer import Timer
 from utils.io_utils import save_results_to_file, save_hyperparameters_to_file, save_loss_to_file
 from utils.parser import get_parser, get_given_parameters_parser
 
-from sklearn.model_selection import KFold, StratifiedKFold  # , train_test_split
+from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 
 
 def cross_validation(model, X, y, args, save_model=False):
     # Record some statistics and metrics
     sc = get_scorer(args)
     train_timer = Timer()
-    test_timer = Timer()
+    valid_timer = Timer()
 
     if args.objective == "regression":
         kf = KFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
     elif args.objective == "classification" or args.objective == "binary":
         kf = StratifiedKFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
+    elif args.objective == "multi-label_classification":
+        kf = MultilabelStratifiedKFold(n_splits=args.num_splits, shuffle=args.shuffle, random_state=args.seed)
     else:
-        raise NotImplementedError("Objective" + args.objective + "is not yet implemented.")
+        raise NotImplementedError("Objective " + args.objective + " is not yet implemented.")
 
-    for i, (train_index, test_index) in enumerate(kf.split(X, y)):
+    for i, (train_index, valid_index) in enumerate(kf.split(X, y)):
 
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-
-        # X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.05, random_state=args.seed)
+        X_train, X_valid = X[train_index], X[valid_index]
+        y_train, y_valid = y[train_index], y[valid_index]
 
         # Create a new unfitted version of the model
         curr_model = model.clone()
 
         # Train model
         train_timer.start()
-        loss_history, val_loss_history = curr_model.fit(X_train, y_train, X_test, y_test)  # X_val, y_val)
+        loss_history, val_loss_history = curr_model.fit(X_train, y_train, X_valid, y_valid)
         train_timer.end()
 
-        # Test model
-        test_timer.start()
-        curr_model.predict(X_test)
-        test_timer.end()
+        # Validate model
+        valid_timer.start()
+        curr_model.predict(X_valid)
+        valid_timer.end()
 
-        # Save model weights and the truth/prediction pairs for traceability
-        curr_model.save_model_and_predictions(y_test, i)
+        # Save model weights and the truth/prediction pairs for traceability in output/model_name/dataset/(predictions or models)
+        curr_model.save_model_and_predictions(y_valid, i)
 
         if save_model:
-            save_loss_to_file(args, loss_history, "loss", extension=i)
-            save_loss_to_file(args, val_loss_history, "val_loss", extension=i)
+            # Save the loss history to a file in output/model_name/dataset/logging
+            save_loss_to_file(args, loss_history, "cross_validation_train_loss", extension=i)
+            save_loss_to_file(args, val_loss_history, "cross_validation_val_loss", extension=i)
 
         # Compute scores on the output
-        sc.eval(y_test, curr_model.predictions, curr_model.prediction_probabilities)
+        sc.eval(y_valid, curr_model.predictions, curr_model.prediction_probabilities)
 
         print(sc.get_results())
 
@@ -62,14 +64,65 @@ def cross_validation(model, X, y, args, save_model=False):
     if save_model:
         print("Results:", sc.get_results())
         print("Train time:", train_timer.get_average_time())
+        print("Inference time:", valid_timer.get_average_time())
+
+        # Save the all statistics to a file in output/model_name/dataset/results.txt
+        save_results_to_file(args, sc.get_results(),
+                             train_timer.get_average_time(), valid_timer.get_average_time(),
+                             model.params)
+
+    return sc, (train_timer.get_average_time(), valid_timer.get_average_time())
+
+def split_data(X, y, args):
+    if args.objective == "multi-label_classification":
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=args.test_size, random_state=args.seed, stratify=y)
+    else:
+        raise NotImplementedError("Objective " + args.objective + " is not yet implemented.")
+
+    return X_train, y_train, X_test, y_test
+
+def test_model(model, X_train, y_train, X_test, y_test, args, save_model=False): # Need to check code
+    # Record some statistics and metrics
+    sc = get_scorer(args)
+    train_timer = Timer()
+    test_timer = Timer()
+
+    curr_model = model.clone()
+
+    # Train model
+    train_timer.start()
+    loss_history, test_loss_history = curr_model.fit(X_train, y_train, X_test, y_test)
+    train_timer.end()
+
+    # Test model
+    test_timer.start()
+    curr_model.predict(X_test)
+    test_timer.end()
+
+    # Save model weights and the truth/prediction pairs for traceability in output/model_name/dataset/(predictions or models)
+    curr_model.save_model_and_predictions(y_test)
+
+    if save_model:
+        # Save the loss history to a file in output/model_name/dataset/logging 
+        save_loss_to_file(args, loss_history, "testing_train_loss", extension="testing")
+        save_loss_to_file(args, test_loss_history, "testing_test_loss", extension="testing")
+
+    # Compute scores on the output
+    sc.eval(y_test, curr_model.predictions, curr_model.prediction_probabilities)
+
+    print(sc.get_results())
+
+    # Best run is saved to file
+    if save_model:
+        print("Results:", sc.get_results())
+        print("Train time:", train_timer.get_average_time())
         print("Inference time:", test_timer.get_average_time())
 
-        # Save the all statistics to a file
+        # Save the all statistics to a file in output/model_name/dataset/results.txt
         save_results_to_file(args, sc.get_results(),
                              train_timer.get_average_time(), test_timer.get_average_time(),
                              model.params)
 
-    # print("Finished cross validation")
     return sc, (train_timer.get_average_time(), test_timer.get_average_time())
 
 
@@ -94,6 +147,7 @@ class Objective(object):
         # Cross validate the chosen hyperparameters
         sc, time = cross_validation(model, self.X, self.y, self.args)
 
+        # Log tested hyperparameters to file in output/model_name/dataset/hp_log.txt
         save_hyperparameters_to_file(self.args, trial_params, sc.get_results(), time)
 
         return sc.get_objective_result()
@@ -102,35 +156,40 @@ class Objective(object):
 def main(args):
     print("Start hyperparameter optimization")
     X, y = load_data(args)
+    X_train, y_train, X_test, y_test = split_data(X, y, args)
 
-    model_name = str2model(args.model_name)
+    model_name = str2model(args)
 
-    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-    study_name = args.model_name + "_" + args.dataset
+    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)) 
+    study_name = args.problem_transformation + "_" + args.model_name + "_" + args.dataset
     storage_name = "sqlite:///{}.db".format(study_name)
-
+    
+    optuna.delete_study(study_name=study_name, storage=storage_name)
     study = optuna.create_study(direction=args.direction,
                                 study_name=study_name,
                                 storage=storage_name,
-                                load_if_exists=True)
-    study.optimize(Objective(args, model_name, X, y), n_trials=args.n_trials)
+                                load_if_exists=True,
+                                sampler=optuna.samplers.TPESampler(n_startup_trials=args.n_startup_trials, seed=args.seed))
+    study.optimize(Objective(args, model_name, X_test, y_test), n_trials=args.n_trials, seed=args.seed)
     print("Best parameters:", study.best_trial.params)
 
-    # Run best trial again and save it!
+    # Run best trial again with all training data and save the model
     model = model_name(study.best_trial.params, args)
-    cross_validation(model, X, y, args, save_model=True)
+    test_model(model, X_train, y_train, X_test, y_test, args, save_model=True)
 
 
 def main_once(args):
     print("Train model with given hyperparameters")
     X, y = load_data(args)
+    X_train, y_train, X_test, y_test = split_data(X, y, args) 
 
-    model_name = str2model(args.model_name)
+    model_name = str2model(args) # Get the model class
 
-    parameters = args.parameters[args.dataset][args.model_name]
-    model = model_name(parameters, args)
+    parameters = args.parameters[args.dataset][args.model_name] # Dictionary of hyperparameters
+    model = model_name(parameters, args) # Create model with given hyperparameters
 
-    sc, time = cross_validation(model, X, y, args)
+    sc, time = test_model(model, X_train, y_train, X_test, y_test, args) # Train and test the model
+
     print(sc.get_results())
     print(time)
 

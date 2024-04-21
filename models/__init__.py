@@ -1,97 +1,63 @@
 all_models = ["LinearModel", "KNN", "DecisionTree", "RandomForest", "XGBoost", "CatBoost", "LightGBM", "ModelTree",
                "MLP", "TabNet", "VIME", "TabTransformer", "NODE", "DeepGBM", "RLN", "DNFNet", "STG", "NAM", "DeepFM",
-               "SAINT", "DANet"]
+               "SAINT", "DANet"] # Need to update for new models
 
 
-def str2model(model):
+def str2model(args):
 
-    if model == "LinearModel":
-        from models.baseline_models import LinearModel
-        return LinearModel
+    if args.problem_transformation == "None":
 
-    elif model == "KNN":
-        from models.baseline_models import KNN
-        return KNN
+        if args.model_name == "LinearModel":
+            from models.baseline_models import LinearModel
+            return LinearModel
 
-    elif model == "SVM":
-        from models.baseline_models import SVM
-        return SVM
+        elif args.model_name == "KNN":
+            from models.baseline_models import KNN
+            return KNN
 
-    elif model == "DecisionTree":
-        from models.baseline_models import DecisionTree
-        return DecisionTree
+        elif args.model_name == "RandomForest":
+            from models.baseline_models import RandomForest
+            return RandomForest
 
-    elif model == "RandomForest":
-        from models.baseline_models import RandomForest
-        return RandomForest
+        elif args.model_name == "XGBoost":
+            from models.tree_models import XGBoost
+            return XGBoost
 
-    elif model == "XGBoost":
-        from models.tree_models import XGBoost
-        return XGBoost
+        elif args.model_name == "CatBoost":
+            from models.tree_models import CatBoost
+            return CatBoost
 
-    elif model == "CatBoost":
-        from models.tree_models import CatBoost
-        return CatBoost
+        elif args.model_name == "TabNet":
+            from models.tabnet import TabNet
+            return TabNet
 
-    elif model == "LightGBM":
-        from models.tree_models import LightGBM
-        return LightGBM
+        elif args.model_name == "VIME":
+            from models.vime import VIME
+            return VIME
 
-    elif model == "MLP":
-        from models.mlp import MLP
-        return MLP
+        elif args.model_name == "TabTransformer":
+            from models.tabtransformer import TabTransformer
+            return TabTransformer
 
-    elif model == "ModelTree":
-        from models.modeltree import ModelTree
-        return ModelTree
+        elif args.model_name == "SAINT":
+            from models.saint import SAINT
+            return SAINT
 
-    elif model == "TabNet":
-        from models.tabnet import TabNet
-        return TabNet
+        else:
+            raise NotImplementedError("Model \"" + args.model + "\" not yet implemented")
+    
+    elif args.problem_transformation == "BinaryRelevance":
+        from models.problem_transformation import BinaryRelevance
+        return BinaryRelevance
 
-    elif model == "VIME":
-        from models.vime import VIME
-        return VIME
+    elif args.problem_transformation == "ClassifierChain":
+        from models.problem_transformation import ClassifierChain
+        return ClassifierChain
 
-    elif model == "TabTransformer":
-        from models.tabtransformer import TabTransformer
-        return TabTransformer
-
-    elif model == "NODE":
-        from models.node import NODE
-        return NODE
-
-    elif model == "DeepGBM":
-        from models.deepgbm import DeepGBM
-        return DeepGBM
-
-    elif model == "RLN":
-        from models.rln import RLN
-        return RLN
-
-    elif model == "DNFNet":
-        from models.dnf import DNFNet
-        return DNFNet
-
-    elif model == "STG":
-        from models.stochastic_gates import STG
-        return STG
-
-    elif model == "NAM":
-        from models.neural_additive_models import NAM
-        return NAM
-
-    elif model == "DeepFM":
-        from models.deepfm import DeepFM
-        return DeepFM
-
-    elif model == "SAINT":
-        from models.saint import SAINT
-        return SAINT
-
-    elif model == "DANet":
-        from models.danet import DANet
-        return DANet
+    elif args.problem_transformation == "LabelPowerset":
+        from models.problem_transformation import LabelPowerset
+        return LabelPowerset
 
     else:
-        raise NotImplementedError("Model \"" + model + "\" not yet implemented")
+        raise NotImplementedError("Probelm Transformation method \"" + args.problem_transformation + "\" not yet implemented")
+

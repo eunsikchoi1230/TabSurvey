@@ -11,9 +11,12 @@ def get_parser():
                default="config/adult.yml")  # kddcup99 covertype california_housing adult higgs
 
     parser.add('--model_name', required=True, help="Name of the model that should be trained")
+    parser.add('--problem_transformation', required=True, default="None", choices=["BinaryRelevance", "ClassifierChain",
+                                                                                     "LabelPowerset", "None"],
+               help="Problem transfomation used for multi-label classification tasks. None for other tasks.")
     parser.add('--dataset', required=True, help="Name of the dataset that will be used")
     parser.add('--objective', required=True, type=str, default="regression", choices=["regression", "classification",
-                                                                                      "binary"],
+                                                                                      "binary", "multi-label_classification"],
                help="Set the type of the task")
 
     parser.add('--use_gpu', action="store_true", help="Set to true if GPU is available")
@@ -23,6 +26,7 @@ def get_parser():
     parser.add('--optimize_hyperparameters', action="store_true",
                help="Search for the best hyperparameters")
     parser.add('--n_trials', type=int, default=100, help="Number of trials for the hyperparameter optimization")
+    parser.add('--n_startup_trials', type=int, default=10, help="Number of trials before the hyperparameter optimization")
     parser.add('--direction', type=str, default="minimize", choices=['minimize', 'maximize'],
                help="Direction of optimization.")
 
@@ -30,6 +34,10 @@ def get_parser():
     parser.add('--shuffle', action="store_true", help="Shuffle data during cross-validation")
     parser.add('--seed', type=int, default=123, help="Seed for KFold initialization.")
 
+    parser.add('--test_size', type=float, default=0.2, help="Size of the test set")
+    parser.add('--valid_size', type=float, default=0.2, help="Size of the validation set")
+
+    parser.add('--fill_na', action="store_true", help="Fill missing values")
     parser.add('--scale', action="store_true", help="Normalize input data.")
     parser.add('--target_encode', action="store_true", help="Encode the targets that they start at 0. (0, 1, 2,...)")
     parser.add('--one_hot_encode', action="store_true", help="OneHotEncode the categorical features")

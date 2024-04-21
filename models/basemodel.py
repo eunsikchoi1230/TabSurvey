@@ -92,7 +92,14 @@ class BaseModel:
         elif self.args.objective == "classification" or self.args.objective == "binary":
             self.prediction_probabilities = self.predict_proba(X)
             self.predictions = np.argmax(self.prediction_probabilities, axis=1)
-
+        elif self.args.objective == "multi-label_classification":
+            self.predictions = self.model.predict(X)
+            self.prediction_probabilities = self.predict_proba(X)
+            
+            # Need to convert sparse matrix to dense matrix for scikit-multilearn
+            if self.args.problem_transformation == "LabelPowerset":
+                self.predictions = self.predictions.toarray()
+            
         return self.predictions
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
@@ -107,10 +114,17 @@ class BaseModel:
 
         self.prediction_probabilities = self.model.predict_proba(X)
 
+        # Need to convert sparse matrix to dense matrix for scikit-multilearn
+        if self.args.problem_transformation == "LabelPowerset":
+            self.prediction_probabilities = self.prediction_probabilities.toarray()
+        elif self.args.problem_transformation == "BinaryRelevance":
+            self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
+
         # If binary task returns only probability for the true class, adapt it to return (N x 2)
         if self.prediction_probabilities.shape[1] == 1:
             self.prediction_probabilities = np.concatenate((1 - self.prediction_probabilities,
                                                             self.prediction_probabilities), 1)
+
         return self.prediction_probabilities
 
     def save_model_and_predictions(self, y_true: np.ndarray, filename_extension=""):
@@ -167,9 +181,14 @@ class BaseModel:
         if self.args.objective == "regression":
             # Save array where [:,0] is the truth and [:,1] the prediction
             y = np.concatenate((y_true.reshape(-1, 1), self.predictions.reshape(-1, 1)), axis=1)
-        else:
+        elif self.args.objective == "classification" or self.args.objective == "binary":
             # Save array where [:,0] is the truth and [:,1:] are the prediction probabilities
             y = np.concatenate((y_true.reshape(-1, 1), self.prediction_probabilities), axis=1)
+        elif self.args.objective == "multi-label_classification":
+            # Save array where [:,:self.args.num_classes] is the truth and [:,self.args.num_classes:] are the prediction probabilities
+            y = np.concatenate((y_true.reshape(-1, self.args.num_classes), self.prediction_probabilities), axis=1)
+        else:
+            raise NotImplementedError(f"Saving predictions for objective {self.args.objective} is not implemented.")
 
         save_predictions_to_file(y, self.args, filename_extension)
 
