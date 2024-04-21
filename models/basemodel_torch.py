@@ -119,9 +119,12 @@ class BaseModelTorch(BaseModel):
     def predict(self, X):
         if self.args.objective == "regression":
             self.predictions = self.predict_helper(X)
-        else:
+        elif self.args.objective == "classification" or self.args.objective == "binary":
             self.predict_proba(X)
             self.predictions = np.argmax(self.prediction_probabilities, axis=1)
+        elif self.args.objective == "multi-label_classification":
+            self.predict_proba(X)
+            self.predictions = (self.prediction_probabilities > 0.5).astype(int)
 
         return self.predictions
 

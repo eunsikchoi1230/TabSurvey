@@ -4,11 +4,27 @@ import torch
 from models.basemodel_torch import BaseModelTorch
 from utils.io_utils import save_model_to_file, load_model_from_file
 
+from pytorch_tabnet.metrics import Metric
+from sklearn.metrics import hamming_loss
+import torch.nn.functional as F
+
 '''
     TabNet: Attentive Interpretable Tabular Learning (https://arxiv.org/pdf/1908.07442.pdf)
 
     See the implementation: https://github.com/dreamquark-ai/tabnet
 '''
+
+def BCEWithLogitsLoss(y_pred, y_true):
+    return F.binary_cross_entropy_with_logits(y_pred, y_true)
+
+class HammingLossMetric(Metric):
+    def __init__(self):
+        self._name = "hamming_loss"
+        self._maximize = False  # Minimize the Hamming loss
+
+    def __call__(self, y_true, y_pred):
+        predictions = (y_pred > 0.5).astype(int)
+        return hamming_loss(y_true, predictions)
 
 
 class TabNet(BaseModelTorch):
@@ -16,7 +32,7 @@ class TabNet(BaseModelTorch):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        # Paper recommends to be n_d and n_a the same
+        # Paper recommends to be n_d and n_a the same 
         self.params["n_a"] = self.params["n_d"]
 
         self.params["cat_idxs"] = args.cat_idx if args.cat_idx else []
@@ -30,6 +46,10 @@ class TabNet(BaseModelTorch):
         elif args.objective == "classification" or args.objective == "binary":
             self.model = TabNetClassifier(**self.params)
             self.metric = ["logloss"]
+        elif args.objective == "multi-label_classification":
+            self.model = TabNetRegressor(**self.params)
+            self.loss_fn = BCEWithLogitsLoss
+            self.metric = [HammingLossMetric]
 
     def fit(self, X, y, X_val=None, y_val=None):
         if self.args.objective == "regression":
@@ -37,12 +57,22 @@ class TabNet(BaseModelTorch):
         
         X = X.astype(np.float32)
 
-        self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
-                       max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
-                       batch_size=self.args.batch_size)
+        if self.args.objective == "multi-label_classification":
+            self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
+                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
+                        batch_size=self.args.batch_size, loss_fn=self.loss_fn)
+        else:
+            self.model.fit(X, y, eval_set=[(X_val, y_val)], eval_name=["eval"], eval_metric=self.metric,
+                        max_epochs=self.args.epochs, patience=self.args.early_stopping_rounds,
+                        batch_size=self.args.batch_size)
+
         history = self.model.history
         self.save_model(filename_extension="best")
-        return history['loss'], history["eval_" + self.metric[0]]
+
+        if self.args.objective == "multi-label_classification":
+            return history['loss'], history["eval_hamming_loss"]
+        else:
+            return history['loss'], history["eval_" + self.metric[0]]
 
     def predict_helper(self, X):
         X = np.array(X, dtype=np.float)
@@ -51,6 +81,9 @@ class TabNet(BaseModelTorch):
             return self.model.predict(X)
         elif self.args.objective == "classification" or self.args.objective == "binary":
             return self.model.predict_proba(X)
+        elif self.args.objective == "multi-label_classification":
+            probs = 1 / (1 + np.exp(-self.model.predict(X))) # Apply sigmoid to logits
+            return probs
 
     def save_model(self, filename_extension=""):
         save_model_to_file(self.model, self.args, filename_extension)

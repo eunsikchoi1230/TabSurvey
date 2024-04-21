@@ -164,7 +164,7 @@ class BaseModel:
     def save_model(self, filename_extension=""):
         """Saves the current state of the model.
 
-        Saves the model using pickle. Override this method if model should be saved in a different format.
+        Saves the model using pickle. Override this method if model should be saved in a different format. 
 
         :param filename_extension: true labels of the test data
         """

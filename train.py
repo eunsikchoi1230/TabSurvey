@@ -107,7 +107,6 @@ def test_model(model, X_train, y_train, X_test, y_test, args, save_model=False):
         save_loss_to_file(args, loss_history, "testing_train_loss", extension="testing")
         save_loss_to_file(args, test_loss_history, "testing_test_loss", extension="testing")
 
-    # Compute scores on the output
     sc.eval(y_test, curr_model.predictions, curr_model.prediction_probabilities)
 
     print(sc.get_results())
@@ -164,14 +163,19 @@ def main(args):
     study_name = args.problem_transformation + "_" + args.model_name + "_" + args.dataset
     storage_name = "sqlite:///{}.db".format(study_name)
     
+    # Start from scratch
     optuna.delete_study(study_name=study_name, storage=storage_name)
+
+    # Optimize hyperparameters
     study = optuna.create_study(direction=args.direction,
                                 study_name=study_name,
                                 storage=storage_name,
                                 load_if_exists=True,
                                 sampler=optuna.samplers.TPESampler(n_startup_trials=args.n_startup_trials, seed=args.seed))
-    study.optimize(Objective(args, model_name, X_test, y_test), n_trials=args.n_trials, seed=args.seed)
+    study.optimize(Objective(args, model_name, X_test, y_test), n_trials=args.n_trials)
+    print("\n" + "=" * 20)
     print("Best parameters:", study.best_trial.params)
+    print("=" * 20 + "\n")
 
     # Run best trial again with all training data and save the model
     model = model_name(study.best_trial.params, args)
@@ -180,12 +184,14 @@ def main(args):
 
 def main_once(args):
     print("Train model with given hyperparameters")
+
+    # Commented for test
     X, y = load_data(args)
     X_train, y_train, X_test, y_test = split_data(X, y, args) 
 
     model_name = str2model(args) # Get the model class
 
-    parameters = args.parameters[args.dataset][args.model_name] # Dictionary of hyperparameters
+    parameters = args.parameters[args.dataset][args.problem_transformation][args.model_name] # Dictionary of hyperparameters
     model = model_name(parameters, args) # Create model with given hyperparameters
 
     sc, time = test_model(model, X_train, y_train, X_test, y_test, args) # Train and test the model
