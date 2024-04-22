@@ -17,7 +17,6 @@ ENV LD_LIBRARY_PATH /usr/local/cuda-11.0/lib64:${LD_LIBRARY_PATH}
 
 # Add cuDNN installation
 ARG CUDNN_VERSION=8.7.0
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libcudnn8=$CUDNN_VERSION-1+cuda11.0 \
     libcudnn8-dev=$CUDNN_VERSION-1+cuda11.0 \

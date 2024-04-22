@@ -1,3 +1,10 @@
 Docker volume mounting command:
 
 docker run -it -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks tabsurvey /bin/bash
+
+
+
+# python train.py --config config/cmc_screening.yml --model_name TabNet --problem_transformation None --optimize_hyperparameters
+
+
+optuna 지우는거 제외하기

@@ -164,7 +164,7 @@ def main(args):
     storage_name = "sqlite:///{}.db".format(study_name)
     
     # Start from scratch
-    optuna.delete_study(study_name=study_name, storage=storage_name)
+    # optuna.delete_study(study_name=study_name, storage=storage_name)
 
     # Optimize hyperparameters
     study = optuna.create_study(direction=args.direction,
