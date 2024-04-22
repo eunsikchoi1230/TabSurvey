@@ -1,28 +1,61 @@
-# Use anaconda as baseline
+# Use a base image that's compatible with Debian 11
 FROM continuumio/miniconda3
 
-# Install CUDA
+
+
+# # Environment variables
+# ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+# ENV PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# # Install prerequisites
+# RUN apt-get update && apt-get install -y \
+#     wget \
+#     bzip2 \
+#     ca-certificates \
+#     git \
+#     libglib2.0-0 \
+#     libsm6 \
+#     libxext6 \
+#     libxrender1 \
+#     mercurial \
+#     openssh-client \
+#     procps \
+#     subversion \
+#     && apt-get clean \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Install Miniconda
+# ARG INSTALLER_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# ARG SHA256SUM=96a44849ff17e960eeb8877ecd9055246381c4d4f2d031263b63fa7e2e930af1
+# RUN wget "${INSTALLER_URL}" -O miniconda.sh -q \
+#     && echo "${SHA256SUM} miniconda.sh" > shasum \
+#     && sha256sum --check --status shasum \
+#     && mkdir -p /opt \
+#     && bash miniconda.sh -b -p /opt/conda \
+#     && rm miniconda.sh shasum \
+#     && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+#     && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+#     && echo "conda activate base" >> ~/.bashrc \
+#     && find /opt/conda/ -follow -type f -name '*.a' -delete \
+#     && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
+#     && /opt/conda/bin/conda clean -afy
+
+
+    
 # Choose an appropriate CUDA version compatible with your needs
 ARG CUDA_VERSION=11.8
-# Add the NVIDIA repository and keys
+
+# Debian 11 specific setup for NVIDIA CUDA
 RUN apt-get update && apt-get install -y gnupg2 curl && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
-    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /" > /etc/apt/sources.list.d/cuda.list && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/7fa2af80.pub | apt-key add - && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/3bf863cc.pub | apt-key add - && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/ /" > /etc/apt/sources.list.d/cuda.list && \
     apt-get update && \
     apt-get install -y cuda-toolkit-$CUDA_VERSION
 
-# Set PATH for CUDA 11.0 binaries and libraries
-ENV PATH /usr/local/cuda-11.0/bin:${PATH}
-ENV LD_LIBRARY_PATH /usr/local/cuda-11.0/lib64:${LD_LIBRARY_PATH}
-
-# Add cuDNN installation
-ARG CUDNN_VERSION=8.7.0
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcudnn8=$CUDNN_VERSION-1+cuda11.0 \
-    libcudnn8-dev=$CUDNN_VERSION-1+cuda11.0 \
-&& apt-mark hold libcudnn8 && rm -rf /var/lib/apt/lists/*
-
-
+# Set PATH for CUDA binaries and libraries - ensure this matches the installed version
+ENV PATH /usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 
 # Install Jupyter notebook
 RUN /opt/conda/bin/conda install jupyter -y
@@ -66,7 +99,8 @@ RUN /opt/conda/envs/gbdt/bin/python -m pip install https://github.com/schufa-inn
 #############################################################################################################
 
 # Set up Pytorch environment
-RUN /opt/conda/bin/conda create -n torch -y python=3.8 pytorch cudatoolkit=11.3 -c pytorch
+# RUN /opt/conda/bin/conda create -n torch -y python=3.8 pytorch cudatoolkit=11.3 -c pytorch
+RUN /opt/conda/bin/conda create -n torch -y python=3.8 pytorch pytorch-cuda=11.8 -c pytorch -c nvidia
 RUN /opt/conda/bin/conda install -n torch -y -c anaconda ipykernel
 RUN /opt/conda/bin/conda install -n torch -y -c conda-forge optuna
 RUN /opt/conda/bin/conda install -n torch -y -c conda-forge configargparse

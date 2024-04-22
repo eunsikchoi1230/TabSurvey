@@ -4,7 +4,21 @@ docker run -it -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks
 
 
 
-# python train.py --config config/cmc_screening.yml --model_name TabNet --problem_transformation None --optimize_hyperparameters
+
+docker build -t multi-tabsurvey C:\Users\Programming\Documents\GitHub\multi-tabsurvey
 
 
-optuna 지우는거 제외하기
+
+docker run -v ~/output:/opt/notebooks/output -p 3123:3123 --rm -it --gpus all --name cuda-tabsurvey -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks multi-tabsurvey
+
+docker exec -it cuda-tabsurvey /bin/bash
+
+cd opt/notebooks
+
+conda activate torch
+
+python testing.py
+
+python train.py --config config/cmc_screening.yml --model_name TabNet --problem_transformation None --optimize_hyperparameters
+
+
