@@ -1,19 +1,21 @@
 # General parameters
 dataset: CMCscreening
+objective: multi-label_classification # Don't change
+
+# Model used
 problem_transformation: BinaryRelevance # BinaryRelevance, ClassifierChain, LabelPowerset, None
 model_name: NaiveBayes # NaiveBayes, LogisticRegression, KNN, SVM, RandomForest, XGBoost, (CatBoost, LightGBM), DNN, TabNet
-objective: multi-label_classification # Don't change
-optimize_hyperparameters: False
+
+# Optuna parameters- https://optuna.org/
+optimize_hyperparameters: False # Use Optuna to optimize hyperparameters
+n_trials: 30
+n_startup_trials: 10
+direction: minimize
 
 # GPU parameters
 use_gpu: True
 gpu_ids: [0, 1]
 data_parallel: True
-
-# Optuna parameters- https://optuna.org/
-n_trials: 30
-n_startup_trials: 10
-direction: minimize
 
 # Cross validation parameters 
 num_splits: 3
@@ -22,13 +24,13 @@ seed: 221 # Don't change
 
 # Test train valid split parameters
 test_size: 0.2
-valid_size: 0.2
+# valid_size: 0.2 # Not needed since we are using cross validation
 ## Need to implement random, labelset, iterative (not implemented yet) stratification methods
 
 # Preprocessing parameters
 fill_na: True
 scale: True
-target_encode: False # Need implementation for multi-label classification
+target_encode: False 
 one_hot_encode: False
 
 # Training parameters

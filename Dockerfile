@@ -93,6 +93,9 @@ RUN /opt/conda/bin/conda install -n gbdt -y -c conda-forge optuna
 RUN /opt/conda/bin/conda install -n gbdt -y -c conda-forge configargparse
 RUN /opt/conda/bin/conda install -n gbdt -y pandas
 
+# For stratified kfold
+RUN /opt/conda/envs/gbdt/bin/python -m pip install iterative-stratification
+
 # For ModelTrees
 RUN /opt/conda/envs/gbdt/bin/python -m pip install https://github.com/schufa-innovationlab/model-trees/archive/master.zip
 
