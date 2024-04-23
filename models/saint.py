@@ -63,7 +63,7 @@ class SAINT(BaseModelTorch):
 
     def fit(self, X, y, X_val=None, y_val=None):
 
-        if self.args.objective == 'binary':
+        if self.args.objective == 'binary' or self.args.objective == 'multi-label_classification':
             criterion = nn.BCEWithLogitsLoss()
         elif self.args.objective == 'classification':
             criterion = nn.CrossEntropyLoss()

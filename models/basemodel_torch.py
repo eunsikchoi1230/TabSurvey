@@ -50,7 +50,7 @@ class BaseModelTorch(BaseModel):
             y_val = y_val.float()
         elif self.args.objective == "classification":
             loss_func = nn.CrossEntropyLoss()
-        else:
+        elif self.args.objective == "multi-label_classification" or self.args.objective == "binary":
             loss_func = nn.BCEWithLogitsLoss()
             y = y.float()
             y_val = y_val.float()
@@ -122,7 +122,7 @@ class BaseModelTorch(BaseModel):
         elif self.args.objective == "classification" or self.args.objective == "binary":
             self.predict_proba(X)
             self.predictions = np.argmax(self.prediction_probabilities, axis=1)
-        elif self.args.objective == "multi-label_classification":
+        elif self.args.objective == "multi-label_classification": 
             self.predict_proba(X)
             self.predictions = (self.prediction_probabilities > 0.5).astype(int)
 
@@ -150,7 +150,7 @@ class BaseModelTorch(BaseModel):
             for batch_X in test_loader:
                 preds = self.model(batch_X[0].to(self.device))
 
-                if self.args.objective == "binary":
+                if self.args.objective == "binary" or self.args.objective == "multi-label_classification":
                     preds = torch.sigmoid(preds)
 
                 predictions.append(preds.detach().cpu().numpy())

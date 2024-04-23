@@ -2,6 +2,8 @@ import random
 
 from sklearn import linear_model, neighbors, svm, tree, ensemble
 
+from skmultilearn.adapt import MLkNN
+
 from models.basemodel import BaseModel
 
 '''
@@ -136,11 +138,30 @@ class RandomForest(BaseModel):
         elif args.objective == "classification" or args.objective == "binary":
             self.model = ensemble.RandomForestClassifier(n_estimators=params["n_estimators"],
                                                          max_depth=params["max_depth"], n_jobs=-1)
+        elif args.objective == "multi-label_classification":
+            self.model = ensemble.RandomForestClassifier(n_estimators=params["n_estimators"],
+                                                         max_depth=params["max_depth"], n_jobs=-1)
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
             "max_depth": trial.suggest_int("max_depth", 2, 12, log=True),
             "n_estimators": trial.suggest_int("n_estimators", 5, 100, log=True)
+        }
+        return params
+
+
+class MLKNN(BaseModel):
+
+    def __init__(self, params, args):
+        super().__init__(params, args)
+
+        if args.objective == "multi-label_classification":
+            self.model = MLkNN(k=params["k"])
+
+    @classmethod
+    def define_trial_parameters(cls, trial, args):
+        params = {
+            "k": trial.suggest_categorical("k", list(range(3, 42, 2)))
         }
         return params

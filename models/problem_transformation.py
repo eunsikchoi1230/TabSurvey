@@ -1,5 +1,6 @@
-from sklearn.multioutput import MultiOutputClassifier, ClassifierChain
-from skmultilearn.problem_transform import LabelPowerset
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.multioutput import ClassifierChain as ClassifierChainMethod
+from skmultilearn.problem_transform import LabelPowerset as LabelPowersetMethod
 
 from models.basemodel import BaseModel
 
@@ -16,7 +17,7 @@ def get_base_model(params, args, objective):
 
     elif args.model_name == "SVM":
         from sklearn.svm import SVC
-        return SVC(probability=True, kernel=params["kernel"])
+        return SVC(probability=True, kernel="linear", C=params["C"])
 
     elif args.model_name == "KNN":
         from sklearn.neighbors import KNeighborsClassifier
@@ -72,7 +73,7 @@ def get_base_model_params(trial, args):
 
     elif args.model_name == "SVM":
         return {
-            "kernel": trial.suggest_categorical("kernel", ["linear"])
+            "C": trial.suggest_float("C", 1e-10, 1e10, log=True)
         }
     
     elif args.model_name == "KNN":
@@ -165,7 +166,7 @@ class ClassifierChain(BaseModelProblemTransformation):
         super().__init__(params, args)
 
         base_model = get_base_model(self.params, args, "binary")
-        self.model = ClassifierChain(base_model, order="random", random_state=args.seed)
+        self.model = ClassifierChainMethod(base_model, order="random", random_state=args.seed)
 
 
 '''
@@ -179,4 +180,4 @@ class LabelPowerset(BaseModelProblemTransformation):
         super().__init__(params, args)
 
         base_model = get_base_model(self.params, args, "classification")
-        self.model = LabelPowerset(classifier=base_model, require_dense=[True, True])
+        self.model = LabelPowersetMethod(classifier=base_model, require_dense=[True, True])

@@ -15,10 +15,14 @@ docker exec -it cuda-tabsurvey /bin/bash
 
 cd opt/notebooks
 
-conda activate torch
+conda activate gbdt
 
-python testing.py
-
-python train.py --config config/cmc_screening.yml --model_name TabNet --problem_transformation None --optimize_hyperparameters
+python train.py --config config/cmc_screening.yml --model_name CatBoost --problem_transformation BinaryRelevance --optimize_hyperparameters
 
 
+
+
+
+
+
+./testall.sh

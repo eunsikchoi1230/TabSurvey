@@ -115,9 +115,9 @@ class BaseModel:
         self.prediction_probabilities = self.model.predict_proba(X)
 
         # Need to convert sparse matrix to dense matrix for scikit-multilearn
-        if self.args.problem_transformation == "LabelPowerset":
+        if self.args.problem_transformation == "LabelPowerset" or self.args.model_name == 'MLKNN':
             self.prediction_probabilities = self.prediction_probabilities.toarray()
-        elif self.args.problem_transformation == "BinaryRelevance":
+        elif self.args.problem_transformation == "BinaryRelevance" or self.args.model_name == 'RandomForest':
             self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
 
         # If binary task returns only probability for the true class, adapt it to return (N x 2)

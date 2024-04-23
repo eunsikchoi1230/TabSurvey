@@ -99,6 +99,8 @@ class CatBoost(BaseModel):
             self.model = cat.CatBoostRegressor(**self.params)
         elif args.objective == "classification" or args.objective == "binary":
             self.model = cat.CatBoostClassifier(**self.params)
+        elif args.objective == "multi-label_classification":
+            self.model = cat.CatBoostClassifier(**self.params, loss_function='MultiLogloss')
 
     def fit(self, X, y, X_val=None, y_val=None):
 

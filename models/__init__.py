@@ -6,38 +6,26 @@ all_models = ["LinearModel", "KNN", "DecisionTree", "RandomForest", "XGBoost", "
 def str2model(args):
 
     if args.problem_transformation == "None":
-
-        if args.model_name == "LinearModel":
-            from models.baseline_models import LinearModel
-            return LinearModel
-
-        elif args.model_name == "KNN":
-            from models.baseline_models import KNN
-            return KNN
+        
+        if args.model_name == "MLKNN":
+            from models.baseline_models import MLKNN
+            return MLKNN
 
         elif args.model_name == "RandomForest":
             from models.baseline_models import RandomForest
             return RandomForest
 
-        elif args.model_name == "XGBoost":
-            from models.tree_models import XGBoost
-            return XGBoost
-
         elif args.model_name == "CatBoost":
             from models.tree_models import CatBoost
             return CatBoost
 
+        elif args.model_name == "FFN":
+            from models.ffn import FFN
+            return FFN
+
         elif args.model_name == "TabNet":
             from models.tabnet import TabNet
             return TabNet
-
-        elif args.model_name == "VIME":
-            from models.vime import VIME
-            return VIME
-
-        elif args.model_name == "TabTransformer":
-            from models.tabtransformer import TabTransformer
-            return TabTransformer
 
         elif args.model_name == "SAINT":
             from models.saint import SAINT
