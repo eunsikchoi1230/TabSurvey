@@ -9,7 +9,7 @@ docker build -t multi-tabsurvey C:\Users\Programming\Documents\GitHub\multi-tabs
 
 
 
-docker run -v ~/output:/opt/notebooks/output -p 3123:3123 --rm -it --gpus all --name cuda-tabsurvey -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks multi-tabsurvey
+docker run -it --gpus all --name cuda-tabsurvey -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks multi-tabsurvey
 
 docker exec -it cuda-tabsurvey /bin/bash
 

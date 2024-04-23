@@ -161,7 +161,7 @@ def main(args):
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)) 
     study_name = args.problem_transformation + "_" + args.model_name + "_" + args.dataset
-    storage_name = "sqlite:///{}.db".format(study_name)
+    storage_name = "sqlite:///optuna/{}.db".format(study_name)
     
     # Start from scratch if the study already exists
     # if optuna.study.get_study(study_name=study_name, storage=storage_name) is not None:

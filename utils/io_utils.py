@@ -86,7 +86,7 @@ def save_hyperparameters_to_file(args, params, results, time=None):
 
 def get_output_path(args, filename, file_type, directory=None, extension=None):
     # For example: output/LinearModel/Covertype
-    dir_path = output_dir + args.problem_transformation + "/" + args.model_name + "/" + args.dataset
+    dir_path = output_dir + args.dataset + "/" + args.problem_transformation + "/" + args.model_name 
 
     if directory:
         # For example: .../models

@@ -108,12 +108,44 @@ def get_base_model_params(trial, args):
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
 
 
+class BaseModelProblemTransformation(BaseModel):
+
+    def __init__(self, params, args):
+        super().__init__(params, args)
+
+
+    def fit(self, X, y, X_val=None, y_val=None):
+
+        if self.args.model_name == "CatBoost" and self.args.cat_idx:
+            X = X.astype('object')
+            X_val = X_val.astype('object')
+            X[:, self.args.cat_idx] = X[:, self.args.cat_idx].astype('int')
+            X_val[:, self.args.cat_idx] = X_val[:, self.args.cat_idx].astype('int')
+
+        super().fit(X, y, X_val, y_val)
+
+        return [], []
+
+    def predict(self, X):
+
+        if self.args.model_name == "CatBoost" and self.args.cat_idx:
+            X = X.astype('object')
+            X[:, self.args.cat_idx] = X[:, self.args.cat_idx].astype('int')
+
+        return super().predict(X)
+
+    @classmethod
+    def define_trial_parameters(cls, trial, args):
+        params = get_base_model_params(trial, args)
+        return params
+
+
 '''
     Binary Relevance - Binary Relevance method for multi-label classification
 '''
 
 
-class BinaryRelevance(BaseModel):
+class BinaryRelevance(BaseModelProblemTransformation):
 
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -122,18 +154,12 @@ class BinaryRelevance(BaseModel):
         self.model = MultiOutputClassifier(base_model, n_jobs=-1)
 
 
-    @classmethod
-    def define_trial_parameters(cls, trial, args):
-        params = get_base_model_params(trial, args)
-        return params
-
-
 '''
     Classifier Chain - Classifier Chain method for multi-label classification
 '''
 
 
-class ClassifierChain(BaseModel):
+class ClassifierChain(BaseModelProblemTransformation):
         
     def __init__(self, params, args):
         super().__init__(params, args)
@@ -142,27 +168,15 @@ class ClassifierChain(BaseModel):
         self.model = ClassifierChain(base_model, order="random", random_state=args.seed)
 
 
-    @classmethod
-    def define_trial_parameters(cls, trial, args):
-        params = get_base_model_params(trial, args)
-        return params
-
-
 '''
     Label Powerset - Label Powerset method for multi-label classification
 '''
 
 
-class LabelPowerset(BaseModel):
+class LabelPowerset(BaseModelProblemTransformation):
         
     def __init__(self, params, args):
         super().__init__(params, args)
 
-        base_model = get_base_model(self.params, args, "binary")
+        base_model = get_base_model(self.params, args, "classification")
         self.model = LabelPowerset(classifier=base_model, require_dense=[True, True])
-
-
-    @classmethod
-    def define_trial_parameters(cls, trial, args):
-        params = get_base_model_params(trial, args)
-        return params
