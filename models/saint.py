@@ -56,7 +56,7 @@ class SAINT(BaseModelTorch):
             final_mlp_style="sep",
             y_dim=args.num_classes
         )
-
+        
         if self.args.data_parallel:
             self.model.transformer = nn.DataParallel(self.model.transformer, device_ids=self.args.gpu_ids)
             self.model.mlpfory = nn.DataParallel(self.model.mlpfory, device_ids=self.args.gpu_ids)

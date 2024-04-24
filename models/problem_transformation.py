@@ -4,6 +4,8 @@ from skmultilearn.problem_transform import LabelPowerset as LabelPowersetMethod
 
 from models.basemodel import BaseModel
 
+import numpy as np
+
 
 def get_base_model(params, args, objective):
 
@@ -154,6 +156,14 @@ class BinaryRelevance(BaseModelProblemTransformation):
         base_model = get_base_model(self.params, args, "binary")
         self.model = MultiOutputClassifier(base_model, n_jobs=-1)
 
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.args.objective == "multi-label_classification":
+            self.prediction_probabilities = self.model.predict_proba(X)
+            self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
+            return self.prediction_probabilities
+        else:
+            return super().predict_proba(X)
+
 
 '''
     Classifier Chain - Classifier Chain method for multi-label classification
@@ -181,3 +191,11 @@ class LabelPowerset(BaseModelProblemTransformation):
 
         base_model = get_base_model(self.params, args, "classification")
         self.model = LabelPowersetMethod(classifier=base_model, require_dense=[True, True])
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.args.objective == "multi-label_classification":
+            self.prediction_probabilities = self.model.predict_proba(X)
+            self.prediction_probabilities = self.prediction_probabilities.toarray()
+            return self.prediction_probabilities
+        else:
+            return super().predict_proba(X)

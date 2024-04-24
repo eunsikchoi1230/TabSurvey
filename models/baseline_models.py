@@ -1,6 +1,10 @@
 import random
 
+import numpy as np
+
 from sklearn import linear_model, neighbors, svm, tree, ensemble
+
+from sklearn.dummy import DummyClassifier
 
 from skmultilearn.adapt import MLkNN
 
@@ -142,6 +146,14 @@ class RandomForest(BaseModel):
             self.model = ensemble.RandomForestClassifier(n_estimators=params["n_estimators"],
                                                          max_depth=params["max_depth"], n_jobs=-1)
 
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.args.objective == "multi-label_classification":
+            self.prediction_probabilities = self.model.predict_proba(X)
+            self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
+            return self.prediction_probabilities
+        else:
+            return super().predict_proba(X)
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
@@ -159,9 +171,39 @@ class MLKNN(BaseModel):
         if args.objective == "multi-label_classification":
             self.model = MLkNN(k=params["k"])
 
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.args.objective == "multi-label_classification":
+            self.prediction_probabilities = self.model.predict_proba(X)
+            self.prediction_probabilities = self.prediction_probabilities.toarray()
+            return self.prediction_probabilities
+        else:
+            return super().predict_proba(X)
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
             "k": trial.suggest_categorical("k", list(range(3, 42, 2)))
         }
+        return params
+
+
+class Dummy(BaseModel):
+
+    def __init__(self, params, args):
+        super().__init__(params, args)
+
+        if args.objective == "multi-label_classification":
+            self.model = DummyClassifier(strategy="stratified", random_state=self.args.seed) 
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.args.objective == "multi-label_classification":
+            self.prediction_probabilities = self.model.predict_proba(X)
+            self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
+            return self.prediction_probabilities
+        else:
+            return super().predict_proba(X)
+
+    @classmethod
+    def define_trial_parameters(cls, trial, args):
+        params = dict()
         return params

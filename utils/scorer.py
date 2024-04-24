@@ -1,5 +1,5 @@
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, f1_score, log_loss, roc_auc_score
-from sklearn.metrics import hamming_loss, coverage_error, label_ranking_loss, label_ranking_average_precision_score
+from sklearn.metrics import hamming_loss, coverage_error, label_ranking_loss, label_ranking_average_precision_score, log_loss
 
 import numpy as np
 
@@ -171,6 +171,7 @@ class MultilabelScorer(Scorer):
             self.coverage_errors = []
             self.ranking_losses = []
             self.average_precisions = []
+            self.loglosses = []
     
         def eval(self, y_true, y_prediction, y_probabilities):
             acc = accuracy_score(y_true, y_prediction)
@@ -178,14 +179,23 @@ class MultilabelScorer(Scorer):
             cov = coverage_error(y_true, y_probabilities)
             ranking = label_ranking_loss(y_true, y_probabilities)
             avg_p = label_ranking_average_precision_score(y_true, y_probabilities)
+            logloss = log_loss(y_true, y_probabilities)
     
             self.accs.append(acc)
             self.hamming_losses.append(hamming)
             self.coverage_errors.append(cov)
             self.ranking_losses.append(ranking)
             self.average_precisions.append(avg_p)
+            self.loglosses.append(logloss)
     
-            return {"Accuracy": acc, "Hamming Loss": hamming, "Coverage Error": cov, "Ranking Loss": ranking, "Average Precision": avg_p}
+            return {
+                "Accuracy": acc, 
+                "Hamming Loss": hamming, 
+                "Coverage Error": cov, 
+                "Ranking Loss": ranking, 
+                "Average Precision": avg_p, 
+                # "Log Loss": logloss
+                }
     
         def get_results(self):
             acc_mean = np.mean(self.accs)
@@ -203,6 +213,9 @@ class MultilabelScorer(Scorer):
             avg_p_mean = np.mean(self.average_precisions)
             avg_p_std = np.std(self.average_precisions)
 
+            logloss_mean = np.mean(self.loglosses)
+            logloss_std = np.std(self.loglosses)
+
             return {"Accuracy - mean": acc_mean,
                     "Accuracy - std": acc_std,
                     "Hamming Loss - mean": hamming_mean,
@@ -212,7 +225,11 @@ class MultilabelScorer(Scorer):
                     "Ranking Loss - mean": ranking_mean,
                     "Ranking Loss - std": ranking_std,
                     "Average Precision - mean": avg_p_mean,
-                    "Average Precision - std": avg_p_std}
+                    "Average Precision - std": avg_p_std,
+                    # "Log Loss - mean": logloss_mean,
+                    # "Log Loss - std": logloss_std
+                    }
 
         def get_objective_result(self):
+            # return np.mean(self.loglosses)
             return np.mean(self.hamming_losses)

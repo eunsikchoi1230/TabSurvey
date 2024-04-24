@@ -17,6 +17,7 @@ class BaseModelTorch(BaseModel):
         self.device = self.get_device()
         self.gpus = args.gpu_ids if args.use_gpu and torch.cuda.is_available() and args.data_parallel else None
 
+
     def to_device(self):
         if self.args.data_parallel:
             self.model = nn.DataParallel(self.model, device_ids=self.args.gpu_ids)

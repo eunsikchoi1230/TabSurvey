@@ -4,16 +4,18 @@ import numpy as np
 
 dir_path = 'output/CMCscreening'
 
-problem_transformations = ['BinaryRelevance', 'ClassifierChain', 'LabelPowerset', 'None', 'None']
-problem_transformation_names = ['Binary\\\\Relevance', 'Classifier\\\\Chain', 'Label\\\\Powerset', 'Algorithm\\\\Adaptation', 'Neural\\\\Network']
+problem_transformations = ['BinaryRelevance', 'ClassifierChain', 'LabelPowerset', 'None', 'None', 'None']
+problem_transformation_names = ['Binary\\\\Relevance', 'Classifier\\\\Chain', 'Label\\\\Powerset', 'Algorithm\\\\Adaptation', 'Neural\\\\Network', 'Dummy']
 models = [
             ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost', 'CatBoost'],
             ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost'],
             ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost'],
             ['MLKNN', 'RandomForest', 'CatBoost'],
             ['FFN', 'TabNet'],
+            ['Dummy']
         ]
 
+gpu_model_indices = [5, 18, 19, 20]
 
 model_nums = []
 metrics = [] 
@@ -26,9 +28,11 @@ for idx, problem_transformation in enumerate(problem_transformations):
             lines = f.readlines()
 
         model_metrics = []
-        for i in range(3, 12, 2):
+        for i in [3, 5, 7, 9, 11, 14, 15]:
             value = float(lines[i].split(": ")[1])
             model_metrics.append("{:.3f}".format(value))
+
+        
 
         metrics.append(model_metrics)
 
@@ -39,16 +43,25 @@ min_indices = np.argmin(np.array(metrics), axis=0)
 secondmax_indices = np.argsort(np.array(metrics), axis=0)[-2]
 secondmin_indices = np.argsort(np.array(metrics), axis=0)[1]
 
-def format_values(lst):
-    formatted_list = []
-    for item in lst:
-        if isinstance(item, list):  
-            formatted_list.append(format_values(item))  
-        else:
-            formatted_list.append("{:.3f}".format(item) if isinstance(item, float) or isinstance(item, int) else item)
-    return formatted_list
+def format_time(seconds):
+    minutes = int(seconds // 60)
+    remaining_seconds = int(seconds % 60)
+    if seconds < 1:
+        return "\\textless 1s"
+    if minutes == 0:
+        return f"{remaining_seconds}s"
+    else:
+        return f"{minutes}m {remaining_seconds:02}s"
 
-metrics = format_values(metrics)
+for i, row in enumerate(metrics):
+    for j, value in enumerate(row):
+        if j in [5, 6]:
+            if i in gpu_model_indices:
+                metrics[i][j] = format_time(float(value)) + " \\tiny (GPU)"
+            else:
+                metrics[i][j] = format_time(float(value))
+        else:
+            metrics[i][j] = "{:.3f}".format(float(value))
 
 best_indices = [max_indices[0], min_indices[1], min_indices[2], min_indices[3], max_indices[4]]
 second_best_indices = [secondmax_indices[0], secondmin_indices[1], secondmin_indices[2], secondmin_indices[3], secondmax_indices[4]]

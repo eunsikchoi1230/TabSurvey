@@ -6,6 +6,10 @@ all_models = ["LinearModel", "KNN", "DecisionTree", "RandomForest", "XGBoost", "
 def str2model(args):
 
     if args.problem_transformation == "None":
+
+        if args.model_name == "Dummy":
+            from models.baseline_models import Dummy
+            return Dummy
         
         if args.model_name == "MLKNN":
             from models.baseline_models import MLKNN
