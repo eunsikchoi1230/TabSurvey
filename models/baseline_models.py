@@ -187,7 +187,28 @@ class MLKNN(BaseModel):
         return params
 
 
-class Dummy(BaseModel):
+class DummyMostFrequent(BaseModel):
+
+    def __init__(self, params, args):
+        super().__init__(params, args)
+
+        if args.objective == "multi-label_classification":
+            self.model = DummyClassifier(strategy="most_frequent", random_state=self.args.seed) 
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.args.objective == "multi-label_classification":
+            self.prediction_probabilities = self.model.predict_proba(X)
+            self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
+            return self.prediction_probabilities
+        else:
+            return super().predict_proba(X)
+
+    @classmethod
+    def define_trial_parameters(cls, trial, args):
+        params = dict()
+        return params
+
+class DummyStratified(BaseModel):
 
     def __init__(self, params, args):
         super().__init__(params, args)

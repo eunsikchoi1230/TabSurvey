@@ -12,7 +12,7 @@ models = [
             ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost'],
             ['MLKNN', 'RandomForest', 'CatBoost'],
             ['FFN', 'TabNet'],
-            ['Dummy']
+            ['Stratified', 'MostFrequent']
         ]
 
 gpu_model_indices = [5, 18, 19, 20]
