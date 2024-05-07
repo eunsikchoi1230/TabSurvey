@@ -78,7 +78,7 @@ RUN /opt/conda/bin/conda install -n sklearn -y pandas
 
 # For stratified kfold
 RUN /opt/conda/envs/sklearn/bin/python -m pip install iterative-stratification
-
+RUN /opt/conda/envs/sklearn/bin/python -m pip install catboost==1.2.5
 #############################################################################################################
 
 # Set up GBDT environment
@@ -116,6 +116,7 @@ RUN /opt/conda/envs/gbdt/bin/python -m ipykernel install --user --name=torch
 
 # For stratified kfold
 RUN /opt/conda/envs/torch/bin/python -m pip install iterative-stratification
+RUN /opt/conda/envs/torch/bin/python -m pip install catboost==1.2.5
 
 # For TabNet
 RUN /opt/conda/envs/torch/bin/python -m pip install pytorch-tabnet

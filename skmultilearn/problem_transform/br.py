@@ -107,7 +107,8 @@ class BinaryRelevance(ProblemTransformationBase):
 
     """
 
-    def __init__(self, classifier=None, require_dense=None):
+    def __init__(self, classifier=None, require_dense=None, cat_idx=None):
+        self.cat_idx = cat_idx
         super(BinaryRelevance, self).__init__(classifier, require_dense)
 
     def _generate_partition(self, X, y):
@@ -156,9 +157,20 @@ class BinaryRelevance(ProblemTransformationBase):
             y_subset = self._generate_data_subset(y, self.partition_[i], axis=1)
             if issparse(y_subset) and y_subset.ndim > 1 and y_subset.shape[1] == 1:
                 y_subset = np.ravel(y_subset.toarray())
-            classifier.fit(
-                self._ensure_input_format(X), self._ensure_output_format(y_subset)
-            )
+
+            from catboost.core import CatBoostClassifier
+            if isinstance(classifier, CatBoostClassifier):
+                catboost_X = self._ensure_input_format(X).astype('object')
+                catboost_X[:, self.cat_idx] = catboost_X[:, self.cat_idx].astype('int')
+                
+                classifier.fit(
+                    catboost_X, self._ensure_output_format(y_subset)
+                )
+            else:
+                classifier.fit(
+                    self._ensure_input_format(X), self._ensure_output_format(y_subset)
+                )
+
             self.classifiers_.append(classifier)
 
         return self
@@ -201,10 +213,17 @@ class BinaryRelevance(ProblemTransformationBase):
 
         result = lil_matrix((X.shape[0], self._label_count), dtype="float")
         for label_assignment, classifier in zip(self.partition_, self.classifiers_):
+
+            from catboost.core import CatBoostClassifier
+            catboost_X = self._ensure_input_format(X)
+            if isinstance(self.classifier, CatBoostClassifier):
+                catboost_X = catboost_X.astype('object')
+                catboost_X[:, self.cat_idx] = catboost_X[:, self.cat_idx].astype('int')
+
             if isinstance(self.classifier, MLClassifierBase):
                 # the multilabel classifier should provide a (n_samples, n_labels) matrix
                 # we just need to reorder it column wise
-                result[:, label_assignment] = classifier.predict_proba(X)
+                result[:, label_assignment] = classifier.predict_proba(catboost_X)
             else:
                 # a base classifier for binary relevance returns
                 # n_samples x n_classes, where n_classes = [0, 1] - 1 is the probability of
@@ -212,7 +231,7 @@ class BinaryRelevance(ProblemTransformationBase):
                 result[
                     :, label_assignment
                 ] = self._ensure_multi_label_from_single_class(
-                    classifier.predict_proba(self._ensure_input_format(X))
+                    classifier.predict_proba(catboost_X)
                 )[
                     :, 1
                 ]  # probability that label is assigned

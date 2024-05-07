@@ -164,8 +164,9 @@ def main(args):
     storage_name = "sqlite:///optuna/{}.db".format(study_name)
     
     # Start from scratch if the study already exists
-    # if optuna.study.get_study(study_name=study_name, storage=storage_name) is not None:
-    #     optuna.study.delete_study(study_name=study_name, storage=storage_name)
+    all_studies = optuna.study.get_all_study_summaries(storage=storage_name)
+    if any(study.study_name == study_name for study in all_studies):
+        optuna.delete_study(study_name=study_name, storage=storage_name)
 
     # Optimize hyperparameters
     study = optuna.create_study(direction=args.direction,

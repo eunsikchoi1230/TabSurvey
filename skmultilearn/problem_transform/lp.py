@@ -104,11 +104,12 @@ class LabelPowerset(ProblemTransformationBase):
 
     """
 
-    def __init__(self, classifier=None, require_dense=None):
+    def __init__(self, classifier=None, require_dense=None, cat_idx=None):
         super(LabelPowerset, self).__init__(
             classifier=classifier, require_dense=require_dense
         )
         self._clean()
+        self.cat_idx = cat_idx
 
     def _clean(self):
         """Reset classifier internals before refitting"""
@@ -137,7 +138,18 @@ class LabelPowerset(ProblemTransformationBase):
         """
         X = self._ensure_input_format(X, sparse_format="csr", enforce_sparse=True)
 
-        self.classifier.fit(self._ensure_input_format(X), self.transform(y))
+        from catboost.core import CatBoostClassifier
+        if isinstance(self.classifier, CatBoostClassifier):
+            catboost_X = self._ensure_input_format(X).astype('object')
+            catboost_X[:, self.cat_idx] = catboost_X[:, self.cat_idx].astype('int')
+            
+            self.classifier.fit(
+                catboost_X, self.transform(y)
+            )
+        else:
+            self.classifier.fit(
+                self._ensure_input_format(X), self.transform(y)
+            )
 
         return self
 
@@ -173,8 +185,17 @@ class LabelPowerset(ProblemTransformationBase):
         :mod:`scipy.sparse` matrix of `float in [0.0, 1.0]`, shape=(n_samples, n_labels)
             matrix with label assignment probabilities
         """
+        from catboost.core import CatBoostClassifier
+        if isinstance(self.classifier, CatBoostClassifier):
+            catboost_X = self._ensure_input_format(X).astype('object')
+            catboost_X[:, self.cat_idx] = catboost_X[:, self.cat_idx].astype('int')
+            
+            lp_prediction = self.classifier.predict_proba(catboost_X)
+        else:
+            lp_prediction = self.classifier.predict_proba(self._ensure_input_format(X))
 
-        lp_prediction = self.classifier.predict_proba(self._ensure_input_format(X))
+
+
         result = sparse.lil_matrix((X.shape[0], self._label_count), dtype="float")
         for row in range(len(lp_prediction)):
             assignment = lp_prediction[row]

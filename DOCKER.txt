@@ -25,4 +25,4 @@ python train.py --config config/cmc_screening.yml --model_name CatBoost --proble
 
 
 
-./testall.sh
+./testall_PT.sh

@@ -93,12 +93,8 @@ class BaseModel:
             self.prediction_probabilities = self.predict_proba(X)
             self.predictions = np.argmax(self.prediction_probabilities, axis=1)
         elif self.args.objective == "multi-label_classification":
-            self.predictions = self.model.predict(X)
             self.prediction_probabilities = self.predict_proba(X)
-            
-            # Need to convert sparse matrix to dense matrix for scikit-multilearn
-            if self.args.problem_transformation == "LabelPowerset":
-                self.predictions = self.predictions.toarray()
+            self.predictions = self.prediction_probabilities > 0.5
             
         return self.predictions
 

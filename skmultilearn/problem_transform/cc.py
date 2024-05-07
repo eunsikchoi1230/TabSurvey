@@ -113,10 +113,11 @@ class ClassifierChain(ProblemTransformationBase):
 
     """
 
-    def __init__(self, classifier=None, require_dense=None, order=None):
+    def __init__(self, classifier=None, require_dense=None, order=None, cat_idx=None):
         super(ClassifierChain, self).__init__(classifier, require_dense)
         self.order = order
         self.copyable_attrs = ["classifier", "require_dense", "order"]
+        self.cat_idx = cat_idx
 
     def fit(self, X, y, order=None):
         """Fits classifier to training data
@@ -150,13 +151,28 @@ class ClassifierChain(ProblemTransformationBase):
         self.classifiers_ = [None for x in range(self._label_count)]
 
         for label in self._order():
-            self.classifier = copy.deepcopy(self.classifier)
+            classifier = copy.deepcopy(self.classifier)
             y_subset = self._generate_data_subset(y, label, axis=1)
 
-            self.classifiers_[label] = self.classifier.fit(
-                self._ensure_input_format(X_extended),
-                self._ensure_output_format(y_subset),
-            )
+            # self.classifiers_[label] = classifier.fit(
+            #     self._ensure_input_format(X_extended),
+            #     self._ensure_output_format(y_subset),
+            # )
+
+            from catboost.core import CatBoostClassifier
+            if isinstance(classifier, CatBoostClassifier):
+                catboost_X = self._ensure_input_format(X_extended).astype('object')
+                catboost_X[:, self.cat_idx] = catboost_X[:, self.cat_idx].astype('int')
+                
+                self.classifiers_[label] = classifier.fit(
+                    catboost_X, self._ensure_output_format(y_subset)
+                )
+            else:
+                self.classifiers_[label] = classifier.fit(
+                    self._ensure_input_format(X_extended), self._ensure_output_format(y_subset)
+                )
+
+
             X_extended = hstack([X_extended, y_subset])
 
         return self
@@ -200,22 +216,35 @@ class ClassifierChain(ProblemTransformationBase):
         :mod:`scipy.sparse` matrix of `float in [0.0, 1.0]`, shape=(n_samples, n_labels)
             matrix with label assignment probabilities
         """
+        
         X_extended = self._ensure_input_format(
             X, sparse_format="csc", enforce_sparse=True
         )
 
         results = []
         for label in self._order():
-            prediction = self.classifiers_[label].predict(
-                self._ensure_input_format(X_extended)
-            )
 
+            from catboost.core import CatBoostClassifier
+            if isinstance(self.classifier, CatBoostClassifier):
+                catboost_X = self._ensure_input_format(X_extended).astype('object')
+                catboost_X[:, self.cat_idx] = catboost_X[:, self.cat_idx].astype('int')
+
+                prediction = self.classifiers_[label].predict(
+                    catboost_X
+                )
+                prediction_proba = self.classifiers_[label].predict_proba(
+                    catboost_X
+                )
+            else:
+                prediction = self.classifiers_[label].predict(
+                    self._ensure_input_format(X_extended)
+                )
+                prediction_proba = self.classifiers_[label].predict_proba(
+                    self._ensure_input_format(X_extended)
+                )
+            
             prediction = self._ensure_output_format(
                 prediction, sparse_format="csc", enforce_sparse=True
-            )
-
-            prediction_proba = self.classifiers_[label].predict_proba(
-                self._ensure_input_format(X_extended)
             )
 
             prediction_proba = self._ensure_output_format(

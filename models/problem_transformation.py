@@ -1,5 +1,7 @@
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.multioutput import ClassifierChain as ClassifierChainMethod
+# from sklearn.multioutput import MultiOutputClassifier
+# from sklearn.multioutput import ClassifierChain as ClassifierChainMethod
+from skmultilearn.problem_transform import BinaryRelevance as BinaryRelevanceMethod
+from skmultilearn.problem_transform import ClassifierChain as ClassifierChainMethod
 from skmultilearn.problem_transform import LabelPowerset as LabelPowersetMethod
 
 from models.basemodel import BaseModel
@@ -116,36 +118,13 @@ class BaseModelProblemTransformation(BaseModel):
     def __init__(self, params, args):
         super().__init__(params, args)
 
-
-    def fit(self, X, y, X_val=None, y_val=None):
-
-        if self.args.model_name == "CatBoost" and self.args.cat_idx:
-            X = X.astype('object')
-            X_val = X_val.astype('object')
-            X[:, self.args.cat_idx] = X[:, self.args.cat_idx].astype('int')
-            X_val[:, self.args.cat_idx] = X_val[:, self.args.cat_idx].astype('int')
-
-        super().fit(X, y, X_val, y_val)
-
-        return [], []
-
-    def predict(self, X):
-
-        if self.args.model_name == "CatBoost" and self.args.cat_idx:
-            X = X.astype('object')
-            X[:, self.args.cat_idx] = X[:, self.args.cat_idx].astype('int')
-
-        return super().predict(X)
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        return super().predict_proba(X).toarray()
 
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = get_base_model_params(trial, args)
         return params
-
-
-'''
-    Binary Relevance - Binary Relevance method for multi-label classification
-'''
 
 
 class BinaryRelevance(BaseModelProblemTransformation):
@@ -154,34 +133,17 @@ class BinaryRelevance(BaseModelProblemTransformation):
         super().__init__(params, args)
 
         base_model = get_base_model(self.params, args, "binary")
-        self.model = MultiOutputClassifier(base_model, n_jobs=-1)
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        if self.args.objective == "multi-label_classification":
-            self.prediction_probabilities = self.model.predict_proba(X)
-            self.prediction_probabilities = np.array([pred[:, 1] for pred in self.prediction_probabilities]).T
-            return self.prediction_probabilities
-        else:
-            return super().predict_proba(X)
-
-
-'''
-    Classifier Chain - Classifier Chain method for multi-label classification
-'''
+        self.model = BinaryRelevanceMethod(classifier=base_model, require_dense=[True, True], cat_idx=args.cat_idx)
 
 
 class ClassifierChain(BaseModelProblemTransformation):
-        
+
     def __init__(self, params, args):
         super().__init__(params, args)
 
         base_model = get_base_model(self.params, args, "binary")
-        self.model = ClassifierChainMethod(base_model, order="random", random_state=args.seed)
-
-
-'''
-    Label Powerset - Label Powerset method for multi-label classification
-'''
+        np.random.seed(args.seed)
+        self.model = ClassifierChainMethod(classifier=base_model, require_dense=[True, True], order=np.random.permutation(args.num_classes), cat_idx=args.cat_idx)
 
 
 class LabelPowerset(BaseModelProblemTransformation):
@@ -190,12 +152,4 @@ class LabelPowerset(BaseModelProblemTransformation):
         super().__init__(params, args)
 
         base_model = get_base_model(self.params, args, "classification")
-        self.model = LabelPowersetMethod(classifier=base_model, require_dense=[True, True])
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        if self.args.objective == "multi-label_classification":
-            self.prediction_probabilities = self.model.predict_proba(X)
-            self.prediction_probabilities = self.prediction_probabilities.toarray()
-            return self.prediction_probabilities
-        else:
-            return super().predict_proba(X)
+        self.model = LabelPowersetMethod(classifier=base_model, require_dense=[True, True], cat_idx=args.cat_idx)

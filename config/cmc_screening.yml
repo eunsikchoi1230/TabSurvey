@@ -8,8 +8,8 @@ model_name: NaiveBayes # NaiveBayes, LogisticRegression, KNN, SVM, RandomForest,
 
 # Optuna parameters- https://optuna.org/
 optimize_hyperparameters: False # Use Optuna to optimize hyperparameters
-n_trials: 1
-n_startup_trials: 0
+n_trials: 30
+n_startup_trials: 10
 direction: minimize
 
 # GPU parameters
@@ -18,7 +18,7 @@ gpu_ids: [0]
 data_parallel: False
 
 # Cross validation parameters 
-num_splits: 3
+num_splits: 5
 shuffle: True
 seed: 221 # Don't change 
 
