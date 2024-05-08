@@ -6,6 +6,7 @@ __pycache/
 
 catboost_info/
 logs/
-output/
 
 *.db
+
+output/CMCscreening/
