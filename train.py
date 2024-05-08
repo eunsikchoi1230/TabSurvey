@@ -121,8 +121,6 @@ def test_model(model, X_train, y_train, X_test, y_test, args, save_model=False):
                              train_timer.get_average_time(), test_timer.get_average_time(),
                              model.params)
     
-    if args.feature_importance:
-        curr_model.feature_importance(X_test, y_test)
 
     return sc, (train_timer.get_average_time(), test_timer.get_average_time())
 

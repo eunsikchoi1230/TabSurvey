@@ -9,7 +9,7 @@ docker build -t multi-tabsurvey C:\Users\Programming\Documents\GitHub\multi-tabs
 
 
 
-docker run -it --gpus all --name cuda-tabsurvey -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks multi-tabsurvey
+docker run -it --gpus all --name cuda-tabsurvey-jupyter -p 3123:3123 -v C:\Users\Programming\Documents\GitHub\TabSurvey:/opt/notebooks multi-tabsurvey
 
 docker exec -it cuda-tabsurvey /bin/bash
 
@@ -24,8 +24,32 @@ python train.py --config config/cmc_screening.yml --model_name CatBoost --proble
 
 python train.py --config config/cmc_screening.yml --model_name SAINT --problem_transformation None --optimize_hyperparameters
 
+
+docker exec -it cuda-tabsurvey /bin/bash
+
+cd opt/notebooks
+
+conda activate gbdt
+
 python train.py --config config/cmc_screening.yml --model_name CatBoost --problem_transformation None --feature_importance
 
 
 
 ./testall_PT.sh
+
+
+
+
+import shap
+import pickle
+
+with open('/opt/notebooks/data/split_data.pkl', 'rb') as f:
+    X_train, y_train, X_test, y_test = pickle.load(f)
+
+with open('/opt/notebooks/output/CMCscreening/None/CatBoost/models/m_.pkl', 'rb') as f:
+    model = pickle.load(f)
+
+shap.initjs()
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(Pool(X_test, y_test, cat_features=[0, 13, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]))
+shap.summary_plot(shap_values, X_test, plot_type="bar", max_display=20)
