@@ -120,6 +120,9 @@ def test_model(model, X_train, y_train, X_test, y_test, args, save_model=False):
         save_results_to_file(args, sc.get_results(),
                              train_timer.get_average_time(), test_timer.get_average_time(),
                              model.params)
+
+    if args.feature_importance:
+        curr_model.feature_importance(X_test, y_test)
     
 
     return sc, (train_timer.get_average_time(), test_timer.get_average_time())
@@ -183,7 +186,7 @@ def main(args):
     model = model_name(study.best_trial.params, args)
     test_model(model, X_train, y_train, X_test, y_test, args, save_model=True)
 
-
+ 
 def main_once(args):
     print("Train model with given hyperparameters")
 

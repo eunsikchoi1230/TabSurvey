@@ -124,15 +124,18 @@ class CatBoost(BaseModel):
 
     def feature_importance(self, X_test, y_test):
         import shap
-        import matplotlib.pyplot as plt
 
-        shap.initjs()
-        explainer = shap.TreeExplainer(self.model)
-        shap_values = explainer.shap_values(Pool(X_test, y_test, cat_features=self.args.cat_idx))
-        print(shap_values)
-        f = plf.figure()
-        shap.summary_plot(shap_values, X_test, plot_type="bar", max_display=20)
-        f.savefig('output/image.png', bbox_incehs='tight', dpi=600)
+        # Initialize the SHAP Explainer
+        explainer = shap.Explainer(self.model)
+        # Compute SHAP value
+        if self.args.cat_idx:
+            X_test = X_test.astype('object')
+            X_test[:, self.args.cat_idx] = X_test[:, self.args.cat_idx].astype('int')
+
+        shap_values = explainer(X_test) 
+        shap_importance_per_label = np.abs(shap_values.values).mean(axis=0)
+
+        print(shap_importance_per_label)
 
         return 
 
