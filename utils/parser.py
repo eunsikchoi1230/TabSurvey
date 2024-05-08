@@ -25,6 +25,8 @@ def get_parser():
 
     parser.add('--optimize_hyperparameters', action="store_true",
                help="Search for the best hyperparameters")
+    parser.add('--feature_importance', action="store_true",
+               help="Feature importance computation for the given model")
     parser.add('--n_trials', type=int, default=100, help="Number of trials for the hyperparameter optimization")
     parser.add('--n_startup_trials', type=int, default=10, help="Number of trials before the hyperparameter optimization")
     parser.add('--direction', type=str, default="minimize", choices=['minimize', 'maximize'],

@@ -22,6 +22,9 @@ python train.py --config config/cmc_screening.yml --model_name CatBoost --proble
 
 
 
+python train.py --config config/cmc_screening.yml --model_name SAINT --problem_transformation None --optimize_hyperparameters
+
+python train.py --config config/cmc_screening.yml --model_name CatBoost --problem_transformation None --feature_importance
 
 
 

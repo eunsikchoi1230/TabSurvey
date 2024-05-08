@@ -4,18 +4,17 @@ import numpy as np
 
 dir_path = 'output/CMCscreening'
 
-problem_transformations = ['BinaryRelevance', 'ClassifierChain', 'LabelPowerset', 'None', 'None', 'None']
-problem_transformation_names = ['Binary\\\\Relevance', 'Classifier\\\\Chain', 'Label\\\\Powerset', 'Algorithm\\\\Adaptation', 'Neural\\\\Network', 'Dummy']
+problem_transformations = ['BinaryRelevance', 'ClassifierChain', 'LabelPowerset', 'None', 'None']
+problem_transformation_names = ['Binary\\\\Relevance', 'Classifier\\\\Chain', 'Label\\\\Powerset', 'Algorithm\\\\Adaptation', 'Neural\\\\Network']
 models = [
             ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost', 'CatBoost'],
-            ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost'],
-            ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost'],
+            ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost', 'CatBoost'],
+            ['NaiveBayes', 'LogisticRegression', 'KNN', 'RandomForest', 'XGBoost', 'CatBoost'],
             ['MLKNN', 'RandomForest', 'CatBoost'],
-            ['FFN', 'TabNet'],
-            ['Stratified', 'MostFrequent']
+            ['FFN', 'TabNet']
         ]
 
-gpu_model_indices = [5, 18, 19, 20]
+gpu_model_indices = [5, 11, 17, 20, 21, 22]
 
 model_nums = []
 metrics = [] 

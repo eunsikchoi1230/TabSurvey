@@ -16,7 +16,11 @@ parameters: {
 
         }, 
         None: {
-
+            CatBoost: {
+                'learning_rate': 0.14162336880918014, 
+                'max_depth': 10, 
+                'l2_leaf_reg': 29.90357616464617
+            }
         }
     }
 }

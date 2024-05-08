@@ -13,7 +13,6 @@ from utils.parser import get_parser, get_given_parameters_parser
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 
-
 def cross_validation(model, X, y, args, save_model=False):
     # Record some statistics and metrics
     sc = get_scorer(args)
@@ -121,6 +120,9 @@ def test_model(model, X_train, y_train, X_test, y_test, args, save_model=False):
         save_results_to_file(args, sc.get_results(),
                              train_timer.get_average_time(), test_timer.get_average_time(),
                              model.params)
+    
+    if args.feature_importance:
+        curr_model.feature_importance(X_test, y_test)
 
     return sc, (train_timer.get_average_time(), test_timer.get_average_time())
 

@@ -122,6 +122,21 @@ class CatBoost(BaseModel):
 
         return super().predict(X)
 
+    def feature_importance(self, X_test, y_test):
+        import shap
+        import matplotlib.pyplot as plt
+
+        shap.initjs()
+        explainer = shap.TreeExplainer(self.model)
+        shap_values = explainer.shap_values(Pool(X_test, y_test, cat_features=self.args.cat_idx))
+        print(shap_values)
+        f = plf.figure()
+        shap.summary_plot(shap_values, X_test, plot_type="bar", max_display=20)
+        f.savefig('output/image.png', bbox_incehs='tight', dpi=600)
+
+        return 
+
+
     @classmethod
     def define_trial_parameters(cls, trial, args):
         params = {
